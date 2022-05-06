@@ -1,1 +1,1 @@
-# Optimal-Sensor-Placement-for-Active-Flow-Control-in-Deep-Reinforcement-Learning
+# Optimal_Sensor_Placement_for_Active_Flow_Control_in_Deep_Reinforcement_Learning
