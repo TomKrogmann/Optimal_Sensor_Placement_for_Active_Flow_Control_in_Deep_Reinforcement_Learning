@@ -1,8 +1,13 @@
-# Optimal_Sensor_Placement_for_Active_Flow_Control_in_Deep_Reinforcement_Learning
+# Optimal sensor placement for active flow control with deep reinforcement learning 
 
-Some description!
-
-## Subheader
+## Introduction
 
 Test.
 
+## Dependencies
+
+## Simulations 
+
+## Optimal Sensor Placement 
+
+## 
