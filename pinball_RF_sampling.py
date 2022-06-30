@@ -1,36 +1,16 @@
-from cmath import sqrt
-from random import Random
-import matplotlib.pyplot as plt
-import matplotlib.tri as tri
-from stl import mesh
-import torch as pt
 import numpy as np
-from flowtorch import DATASETS
-from flowtorch.data import FOAMDataloader, mask_box
-from flowtorch.analysis import SVD
-import pandas as pd
-import time
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.datasets import make_regression
 from sklearn.inspection import permutation_importance
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import MinMaxScaler
-from scipy.stats import qmc
 from scipy import spatial
-from typing import Dict, Tuple
-import os
+from torch import seed
 from utils import *
+from sklearn.tree import plot_tree
 
-# increase plot resolution
-plt.rcParams["figure.dpi"] = 160
-
-output = "/home/tom/flowtorch/flowtorch/output/test/verify_MinMaxScaler_lecture_feature_globalMinMaxScaling_PI_test_data"
+output = "/home/tom/flowtorch/flowtorch/output/test/Re_170_check_seed_1_same_distance_function"
 
 # load data from OpenFOAM Case
-data_matrix, x, y = load_input_data("RE_170_1000s", output)
+data_matrix, x, y = load_input_data("RE_170_1000s", output, 200, 300)
 
 # specifiy number of iterations for feature selection with RF regressor
 iterations = 100
@@ -45,7 +25,7 @@ store_coords_highest_FI = np.empty((0, 2))
 for iteration_loop in range(iterations):
 
     # Latin Hypercube sampling
-    samples = lh_sampling(n_samples=100, x=x, y=y)
+    samples = lh_sampling(n_samples=100, x=x, y=y, seed=iteration_loop)
 
     circles = {
         "circle_x": [-1.3, 0, 0],
@@ -94,14 +74,17 @@ for iteration_loop in range(iterations):
     # set-up RF parameters
     model_params = {
         "n_jobs": -1,
-        "random_state": 0,
+        "random_state": iteration_loop,
         "bootstrap": True,
         "n_estimators": 100,
-        "max_depth": 7,
+        #"max_depth": 7,
+        "max_depth": 3,
         "max_features": "auto",
         "max_samples": 0.6,
-        "min_samples_leaf": 2,
-        "min_samples_split": 2,
+        #"min_samples_leaf": 2,
+        "min_samples_leaf": 4,
+        #"min_samples_split": 2,
+        "min_samples_split": 25,
     }
 
     # instanciate object of RandomForrestRegressor
@@ -116,36 +99,49 @@ for iteration_loop in range(iterations):
     target_train = coeffs[:idx_train_test]
     target_test = coeffs[idx_train_test:]
 
+    time_interval_test = time_interval[idx_train_test:]
+
     ## MinMaxScaling Ml-CFD
 
-    scaler_X_train = MinMaxScalerLecture()
-    scaler_X_train.fit(input_train)
-    X_train_data_norm = scaler_X_train.scale(input_train)
-    X_test_data_norm = scaler_X_train.scale(input_test)
+    # scaler_X_train = MinMaxScalerLecture()
+    # scaler_X_train.fit(input_train)
+    # X_train_data_norm = scaler_X_train.scale(input_train)
+    # X_test_data_norm = scaler_X_train.scale(input_test)
 
-    scaler_y_train_cl = MinMaxScalerLecture()
-    scaler_y_train_cl.fit(target_train[:, 0])
-    cl_train_data_norm = scaler_y_train_cl.scale(target_train[:, 0])
-    cl_test_data_norm = scaler_y_train_cl.scale(target_test[:, 0])
+    # scaler_y_train_cl = MinMaxScalerLecture()
+    # scaler_y_train_cl.fit(target_train[:, 0])
+    # cl_train_data_norm = scaler_y_train_cl.scale(target_train[:, 0])
+    # cl_test_data_norm = scaler_y_train_cl.scale(target_test[:, 0])
 
-    scaler_y_train_cd = MinMaxScalerLecture()
-    scaler_y_train_cd.fit(target_train[:, 1])
-    cd_train_data_norm = scaler_y_train_cd.scale(target_train[:, 1])
-    cd_test_data_norm = scaler_y_train_cd.scale(target_test[:, 1])
+    # scaler_y_train_cd = MinMaxScalerLecture()
+    # scaler_y_train_cd.fit(target_train[:, 1])
+    # cd_train_data_norm = scaler_y_train_cd.scale(target_train[:, 1])
+    # cd_test_data_norm = scaler_y_train_cd.scale(target_test[:, 1])
 
-    y_train_data_norm = np.column_stack((cl_train_data_norm, cd_train_data_norm))
-    y_test_data_norm = np.column_stack((cl_test_data_norm, cd_test_data_norm))
+    # y_train_data_norm = np.column_stack((cl_train_data_norm, cd_train_data_norm))
+    # y_test_data_norm = np.column_stack((cl_test_data_norm, cd_test_data_norm))
 
     # fit data to the model
-    forest = model.fit(X_train_data_norm, y_train_data_norm)
-    prediction_train = model.predict(X_train_data_norm)
+    forest = model.fit(input_train, target_train)
+    prediction_train = model.predict(input_train)
+    print("Score: %f", forest.score(input_test, target_test))
+
+    # plt.figure(figsize=(50, 50))
+    # plot_tree(model.estimators_[5], 
+    #             feature_names = np.arange(1,len(indices)+1,1),
+    #             #class_names = ("cl","cd"),
+    #             rounded = True, proportion = False, 
+    #             precision = 2, filled = True)
+    # plt.savefig(f"{output}/Regression_tree.png", bbox_inches="tight")
+    # plt.close()
+
 
     # prediction with test data
-    prediction_test = model.predict(X_test_data_norm)
+    prediction_test = model.predict(input_test)
 
     # Compute permutation importance
     result_PI = permutation_importance(
-        forest, input_test, target_test, n_repeats=10, n_jobs=-1, random_state=0
+        forest, input_test, target_test, n_repeats=10, n_jobs=-1, random_state=iteration_loop
     )
 
     # Compute feature importance
@@ -169,57 +165,66 @@ for iteration_loop in range(iterations):
 
     print(f"Finished iteration {iteration_loop}")
 
+np.save(f"{output}/values_highest_PI.npy",store_values_highest_PI)
+np.save(f"{output}/coords_highest_PI.npy",store_coords_highest_PI)
+np.save(f"{output}/targets_test.npy",target_test)
+np.save(f"{output}/time_interval_test.npy",time_interval_test)
+
 # Validate sensor placement with K-means++ Clustering by prediction
 
-min_sensors = 15
-max_sensors = 21
-store_mse = np.empty((0, 3))
+min_sensors = 1
+max_sensors = 20+1
+mse_store = np.empty((0, 3))
 
 for i in range(min_sensors, max_sensors):
-    sensors_FI_clustering = k_means_clustering(
-        repeat=100, points=store_coords_highest_FI, n_sensors=i
+    initial_sensors_FI_clustering, final_sensors_FI_clustering  = k_means_clustering(
+        repeat=10, points=store_coords_highest_FI, n_sensors=i
     )
-    sensors_PI_clustering = k_means_clustering(
-        repeat=100, points=store_coords_highest_PI, n_sensors=i
+    initial_sensors_PI_clustering, final_sensors_PI_clustering = k_means_clustering(
+        repeat=10, points=store_coords_highest_PI, n_sensors=i
     )
     # fig, ax = plt.subplots()
 
-    distance, indices = spatial.KDTree(coords_mesh).query(sensors_PI_clustering)
 
-    coords_sensors_PI = np.zeros((len(indices), 2))
-    values_sensors_PI = np.zeros((len(indices), np.shape(data_matrix)[1]))
+    indices_final_sensors = np.argmin(spatial.distance.cdist(coords_mesh, final_sensors_PI_clustering, "sqeuclidean"), axis=0)
 
-    for i, values in enumerate(indices):
-        coords_sensors_PI[i] = coords_mesh[values]
-        values_sensors_PI[i] = data_matrix[values]
+    coords_sensors_PI = np.zeros((len(indices_final_sensors), 2))
+    values_sensors_PI = np.zeros((len(indices_final_sensors), np.shape(data_matrix)[1]))
 
-    np.save(
-        f"/home/tom/flowtorch/flowtorch/output/test/verify_MinMaxScaler_lecture_feature_globalMinMaxScaling_PI_test_data/coords_{i}_sensors_PI.npy",
-        coords_sensors_PI,
-    )
+    for j, values in enumerate(indices_final_sensors):
+        coords_sensors_PI[j] = coords_mesh[values]
+        values_sensors_PI[j] = data_matrix[values]
+
+    np.save(f"{output}/initial_coords_{i}_sensors_PI.npy",initial_sensors_PI_clustering,)
+    np.save(f"{output}/final_coords_{i}_sensors_PI.npy",coords_sensors_PI,)
 
     model = RandomForestRegressor(**model_params)
+    #model = RandomForestRegressor()
 
     input_train = values_sensors_PI.transpose(1, 0)[:idx_train_test]
     input_test = values_sensors_PI.transpose(1, 0)[idx_train_test:]
 
-    scaler_X_train = MinMaxScalerLecture()
-    scaler_X_train.fit(input_train)
-    X_train_data_norm = scaler_X_train.scale(input_train)
-    X_test_data_norm = scaler_X_train.scale(input_test)
+    # scaler_X_train = MinMaxScalerLecture()
+    # scaler_X_train.fit(input_train)
+    # X_train_data_norm = scaler_X_train.scale(input_train)
+    # X_test_data_norm = scaler_X_train.scale(input_test)
 
-    forest = model.fit(X_train_data_norm, y_train_data_norm)
-    prediction_test = model.predict(X_test_data_norm)
+    forest = model.fit(input_train, target_train)
+    prediction_test = model.predict(input_test)
 
-    rescale_prediction_cl_test = scaler_y_train_cl.rescale(prediction_test[:, 0])
-    rescale_prediction_cd_test = scaler_y_train_cd.rescale(prediction_test[:, 1])
+    # rescale_prediction_cl_test = scaler_y_train_cl.rescale(prediction_test[:, 0])
+    # rescale_prediction_cd_test = scaler_y_train_cd.rescale(prediction_test[:, 1])
+    # prediction = np.column_stack((rescale_prediction_cl_test,rescale_prediction_cd_test))
+    
+    np.save(f"{output}/prediction_{i}_sensors_PI.npy",prediction_test)
 
-    mse_cl = mean_squared_error(target_test[:, 0], rescale_prediction_cl_test)
-    mse_cd = mean_squared_error(target_test[:, 1], rescale_prediction_cd_test)
 
-    mse_store = np.vstack(np.array([i, mse_cl, mse_cd]))
+    # mse_cl = mean_squared_error(target_test[:, 0], rescale_prediction_cl_test)
+    # mse_cd = mean_squared_error(target_test[:, 1], rescale_prediction_cd_test)
 
-np.save(
-    f"/home/tom/flowtorch/flowtorch/output/test/verify_MinMaxScaler_lecture_feature_globalMinMaxScaling_PI_test_data/mse_prediction.npy",
-    mse_store,
-)
+    mse_cl = mean_squared_error(target_test[:, 0], prediction_test[:,0])
+    mse_cd = mean_squared_error(target_test[:, 1], prediction_test[:,1])
+
+    mse_store = np.vstack((mse_store, np.array([i, mse_cl, mse_cd])))
+
+np.save(f"{output}/mse_prediction.npy",mse_store)

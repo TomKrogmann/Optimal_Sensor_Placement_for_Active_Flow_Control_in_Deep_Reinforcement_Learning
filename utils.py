@@ -23,7 +23,7 @@ from scipy import spatial
 from typing import Dict, Tuple
 import os
 
-def load_input_data(dataset: str, output: str) -> Tuple[pt.Tensor, np.array, np.array]:
+def load_input_data(dataset: str, output: str, time_start: int, time_end: int) -> Tuple[pt.Tensor, np.array, np.array]:
     """
     Within the Flowtorch package, load data from OpenFOAM Case and apply mask to specified flow quantity.
 
@@ -33,7 +33,10 @@ def load_input_data(dataset: str, output: str) -> Tuple[pt.Tensor, np.array, np.
         Name of OpenFOAM case in Datasets folder.
     output : str
         Path to save figures
-        
+    time_start : int
+        Start value of considered time interval
+    time_end : int
+        End value of considered time interval  
     Returns
     -------
     data_matrix : pt.Tensor
@@ -72,7 +75,7 @@ def load_input_data(dataset: str, output: str) -> Tuple[pt.Tensor, np.array, np.
     plt.savefig(f"{output}/cylinder_mask.png", bbox_inches="tight")
     plt.close()
 
-    window_times = [t for t in times if 200 <= float(t) <= 300.0]
+    window_times = [t for t in times if time_start <= float(t) <= time_end]
     # print(f"Window times: {window_times}")
 
     n_points = mask.sum().item()
@@ -86,7 +89,7 @@ def load_input_data(dataset: str, output: str) -> Tuple[pt.Tensor, np.array, np.
     return data_matrix, x, y
 
 
-def lh_sampling(n_samples: int, x: float, y: float) -> np.array:
+def lh_sampling(n_samples: int, x: float, y: float, seed: int) -> np.array:
     """
     2D Latin Hypercube Sampling.
 
@@ -98,13 +101,15 @@ def lh_sampling(n_samples: int, x: float, y: float) -> np.array:
         X coordinates to sample from.
     y : float
         Y coordinates to sample from.
+    seed: int
+        seed parameter for reproduceability
 
     Returns
     -------
     samples : np.array
         Array holding sampled x and y values.
     """
-    sampler = qmc.LatinHypercube(d=2)
+    sampler = qmc.LatinHypercube(d=2, seed=seed)
     sample = sampler.random(n_samples)
     lower_bounds = [np.amin(x), np.amin(y)]
     upper_bounds = [np.amax(x), np.amax(y)]
@@ -294,9 +299,9 @@ def find_centroids(k: int, data: pt.Tensor, max_iter: int=100,
             if verbose:
                 print(f"Clustering converged after {i+1} iterations.")
             break
-    return centroids, i+1
+    return centroids, i+1, old_centroids
 
-def k_means_clustering(repeat: int, points: np.array, n_sensors: int) -> np.array:
+def k_means_clustering(repeat: int, points: np.array, n_sensors: int) -> Tuple[np.array, np.array]:
     """
     K_means ++ clustering   
 
@@ -311,14 +316,16 @@ def k_means_clustering(repeat: int, points: np.array, n_sensors: int) -> np.arra
 
     Returns
     -------
-    sensors : pt.Tensor
-        Tensor holding coordinates of clustered centroids.
+    sensors_initial : pt.Tensor
+        Tensor holding coordinates of initial clustered centroids (sensors).
+    sensors_final : pt.Tensor
+        Tensor holding coordinates of final clustered centroids (sensors).
     """
     data = pt.from_numpy(points)
 
-    sensors = initialize_centroids_improved(n_sensors, data)
+    sensors_initial = initialize_centroids_improved(n_sensors, data)
 
     for _ in range(repeat):
-        sensors, _ = find_centroids(n_sensors, data)
+        sensors_final, _ = find_centroids(n_sensors, data)
 
-    return sensors.numpy()
+    return sensors_initial.numpy(), sensors_final.numpy()

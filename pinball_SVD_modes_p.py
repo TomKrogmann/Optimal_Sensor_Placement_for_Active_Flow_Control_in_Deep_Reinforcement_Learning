@@ -9,13 +9,11 @@ from flowtorch.analysis import SVD
 import pysensors as ps
 from scipy import spatial
 
-#from flowtorch.data import FOAMCase
-
 # increase plot resolution
 plt.rcParams["figure.dpi"] = 160
 
 #output = "/home/tom/flowtorch/flowtorch/output/pinball_POD_p_Re170_1000s"
-output = "/home/tom/flowtorch/flowtorch/output/test"
+output = "/home/tom/git/Optimal_Sensor_Placement_for_Active_Flow_Control_in_Deep_Reinforcement_Learning"
 
 path = DATASETS["RE_170_1000s"]
 loader = FOAMDataloader(path)
@@ -69,34 +67,34 @@ vals_s, vecs_s = pt.linalg.eigh(C_snap)
 vals_s, indices = pt.sort(vals_s, descending=True)
 vecs_s = vecs_s[:, indices]
 
-plt.bar(range(1, 21), vals_s[:20]/vals_s.sum()*100)
-plt.gca().set_xticks(range(1, 21))
-plt.xlabel(r"$i$")
-plt.ylabel(r"$\lambda_{i,rel} \times 100\%$")
-plt.title("individual contribution to TKE")
-plt.savefig(f"{output}/P_cylinder_eigvals_snap.png", bbox_inches="tight")
-plt.close()
+# plt.bar(range(1, 21), vals_s[:20]/vals_s.sum()*100)
+# plt.gca().set_xticks(range(1, 21))
+# plt.xlabel(r"$i$")
+# plt.ylabel(r"$\lambda_{i,rel} \times 100\%$")
+# plt.title("individual contribution to TKE")
+# plt.savefig(f"{output}/P_cylinder_eigvals_snap.png", bbox_inches="tight")
+# plt.close()
 
-plt.figure(3)
-fig, (ax1, ax2) = plt.subplots(2, sharex = True)
+# plt.figure(3)
+# fig, (ax1, ax2) = plt.subplots(2, sharex = True)
 
-cont1 = ax1.tricontourf(x,y, data_matrix.mean(dim=1))
-cont2 = ax2.tricontourf(x,y, data_matrix.var(dim=1))
-plt.colorbar(cont1, ax=ax1)
-plt.colorbar(cont2, ax=ax2)
-for ax in (ax1,ax2):
-    ax.add_patch(plt.Circle((-1.3, 0), 0.5, color='k'))
-    ax.add_patch(plt.Circle((0, 0.75), 0.5, color='k'))
-    ax.add_patch(plt.Circle((0, -0.75), 0.5, color='k'))
-    ax.set_aspect("equal")
-    ax.set_ylabel(r"$y/d$")
+# cont1 = ax1.tricontourf(x,y, data_matrix.mean(dim=1))
+# cont2 = ax2.tricontourf(x,y, data_matrix.var(dim=1))
+# plt.colorbar(cont1, ax=ax1)
+# plt.colorbar(cont2, ax=ax2)
+# for ax in (ax1,ax2):
+#     ax.add_patch(plt.Circle((-1.3, 0), 0.5, color='k'))
+#     ax.add_patch(plt.Circle((0, 0.75), 0.5, color='k'))
+#     ax.add_patch(plt.Circle((0, -0.75), 0.5, color='k'))
+#     ax.set_aspect("equal")
+#     ax.set_ylabel(r"$y/d$")
 
-ax1.set_title(r"$P$ - mean")
-ax1.set_xlabel(r"$x/d$")
-ax2.set_title(r"$P$ - variance")
-ax2.set_xlabel(r"$x/d$")
-plt.savefig(f"{output}/c_p-without_mean_variance.png", bbox_inches="tight")
-plt.close()
+# ax1.set_title(r"$P$ - mean")
+# ax1.set_xlabel(r"$x/d$")
+# ax2.set_title(r"$P$ - variance")
+# ax2.set_xlabel(r"$x/d$")
+# plt.savefig(f"{output}/c_p-without_mean_variance.png", bbox_inches="tight")
+# plt.close()
 
 U,s,VH = pt.linalg.svd(data_matrix - data_matrix.mean(dim=1).unsqueeze(-1), full_matrices = False)
   
@@ -115,22 +113,22 @@ U,s,VH = pt.linalg.svd(data_matrix - data_matrix.mean(dim=1).unsqueeze(-1), full
 # plt.savefig(f"{output}/sigma_rel.svg", bbox_inches="tight")
 # plt.close()
 
-plt.figure(6)
-fig,axarr = plt.subplots(4, figsize=(6,7), sharex=True)
+# plt.figure(6)
+# fig,axarr = plt.subplots(4, figsize=(6,7), sharex=True)
 
-for i in range(4):
-    cont = axarr[i].tricontourf(x, y, U[:, i])
-    plt.colorbar(cont, ax=axarr[i])
-    axarr[i].set_aspect("equal", "box")
-    axarr[i].set_ylabel(r"$y/d$")
-    axarr[i].set_title(f"mode {i+1}")
-    axarr[i].add_patch(plt.Circle((-1.3, 0), 0.5, color='k'))
-    axarr[i].add_patch(plt.Circle((0, 0.75), 0.5, color='k'))
-    axarr[i].add_patch(plt.Circle((0, -0.75), 0.5, color='k'))
-    axarr[i].set_aspect("equal", 'box')
-axarr[-1].set_xlabel(r"$x_d$")
-plt.savefig(f"{output}/modes_tricontour.png", bbox_inches="tight")
-plt.close()
+# for i in range(4):
+#     cont = axarr[i].tricontourf(x, y, U[:, i])
+#     plt.colorbar(cont, ax=axarr[i])
+#     axarr[i].set_aspect("equal", "box")
+#     axarr[i].set_ylabel(r"$y/d$")
+#     axarr[i].set_title(f"mode {i+1}")
+#     axarr[i].add_patch(plt.Circle((-1.3, 0), 0.5, color='k'))
+#     axarr[i].add_patch(plt.Circle((0, 0.75), 0.5, color='k'))
+#     axarr[i].add_patch(plt.Circle((0, -0.75), 0.5, color='k'))
+#     axarr[i].set_aspect("equal", 'box')
+# axarr[-1].set_xlabel(r"$x_d$")
+# plt.savefig(f"{output}/modes_tricontour.png", bbox_inches="tight")
+# plt.close()
 
 
 ########## PySensors Reconstruction with SVD modes
@@ -165,7 +163,8 @@ costs[index_point] = 1
 #costs = costs.reshape(-1)
 
 basis = ps.basis.SVD(n_basis_modes=n_basis_modes)
-optimizer = ps.optimizers.CCQR(sensor_costs=costs)
+#optimizer = ps.optimizers.CCQR(sensor_costs=costs)
+optimizer = ps.optimizers.CCQR()
 model = ps.SSPOR(optimizer=optimizer,basis=basis)
 model.fit(X_train)
 
@@ -178,13 +177,13 @@ n_sensors = 20
 
 goal_x_y = np.zeros((n_sensors, 2))
 
-print("First:", goal_x_y)
+#print("First:", goal_x_y)
 
 for i in range(n_sensors):
     goal_x_y[i] = combined_x_y[svd_ranked_sensors[i]]
     #goal_x_y[i][1] = combined_x_y[svd_ranked_sensors[i]]
 
-print("Second:", goal_x_y)
+#print("Second:", goal_x_y)
 
 
 fig, ax = plt.subplots()
@@ -207,12 +206,12 @@ plt.savefig(f"{output}/SVD_modes_sensor_placement.png", bbox_inches="tight")
 #plt.show()
 plt.close()
 
-sensor_range = np.arange(0, 50, 1)
-errors = model.reconstruction_error(X_train, sensor_range=sensor_range)
+# sensor_range = np.arange(0, 50, 1)
+# errors = model.reconstruction_error(X_train, sensor_range=sensor_range)
 
-plt.plot(sensor_range, errors, '-o')
-plt.xlabel('Number of sensors')
-plt.ylabel('Reconstruction error (MSE)')
-plt.title('Reconstruction error for different numbers of sensors');
-plt.savefig(f"{output}/Reconstruction error for different numbers of sensors.png", bbox_inches="tight")
-plt.close()
+# plt.plot(sensor_range, errors, '-o')
+# plt.xlabel('Number of sensors')
+# plt.ylabel('Reconstruction error (MSE)')
+# plt.title('Reconstruction error for different numbers of sensors');
+# plt.savefig(f"{output}/Reconstruction error for different numbers of sensors.png", bbox_inches="tight")
+# plt.close()
