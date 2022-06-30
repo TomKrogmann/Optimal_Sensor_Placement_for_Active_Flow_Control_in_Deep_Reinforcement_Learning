@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-output = "/home/tom/flowtorch/flowtorch/output/test/Re_170_check_seed_2"
+output = "/home/tom/flowtorch/flowtorch/output/test/Re_170"
 
 
 # load data

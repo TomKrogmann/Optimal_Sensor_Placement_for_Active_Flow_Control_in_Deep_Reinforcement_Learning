@@ -7,7 +7,7 @@ from torch import seed
 from utils import *
 from sklearn.tree import plot_tree
 
-output = "/home/tom/flowtorch/flowtorch/output/test/Re_170_check_seed_1_same_distance_function"
+output = "/home/tom/flowtorch/flowtorch/output/test/Re_170"
 
 # load data from OpenFOAM Case
 data_matrix, x, y = load_input_data("RE_170_1000s", output, 200, 300)
