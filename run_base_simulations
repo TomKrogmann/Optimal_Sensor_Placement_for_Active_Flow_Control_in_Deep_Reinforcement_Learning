@@ -1,0 +1,11 @@
+#!/bin/bash
+
+runSimulation()
+{
+    mkdir -p run
+    cp -r test_cases/$1 run/
+    (cd run/$1 && ./Allrun)
+}
+
+# TODO: add more Re numbers
+runSimulation pinnball_re170
