@@ -1,0 +1,5 @@
+run
+output
+*.sif
+.ipynb_checkpoints
+__pycache__
