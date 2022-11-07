@@ -1,0 +1,200 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+libs ("${DRL_LIBBIN}/libPinballRotatingWallVelocity.so");
+
+application     pimpleFoam;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         300;
+
+//deltaT          0.01;
+
+deltaT          5.0e-3;
+
+//writeControl    adjustableRunTime;
+
+writeControl    runTime;
+
+writeInterval   0.125;
+
+//purgeWrite      0;
+
+purgeWrite      1;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+timeFormat      general;
+
+timePrecision   8;
+
+//adjustTimeStep yes;
+
+//maxDeltaT 0.01;
+
+//maxCo 1.0;
+
+//runTimeModifiable true;
+
+runTimeModifiable false;
+
+functions
+{
+    forces
+    {
+        type            forceCoeffs;
+        libs            (forces);
+        executeControl  timeStep;
+        executeInterval 100;
+        //writeControl    writeTime;
+        writeControl    timeStep;
+        writeInterval   100;
+        timeStart       300;
+        log yes;
+        writeFields     yes;
+
+        patches
+        (
+            cylinders
+        );
+	coefficients    (Cd Cl);
+        rhoInf      1;
+        rho         rhoInf;
+
+        CofR        (-0.433 0.0 0.0);
+        liftDir     (0 1 0);
+        dragDir     (1 0 0);
+        //pitchAxis   (0 0 1);
+        magUInf     1.0;
+        lRef        2.5;
+        Aref        0.05;
+    }
+    
+    field_cylinder_a
+    {
+
+        type            surfaceFieldValue;
+        libs            (fieldFunctionObjects);
+        fields          (forceCoeff);
+        //writeControl    timeStep;
+        //executeControl  timeStep;
+        //executeInterval 2;
+        writeControl    timeStep;
+        writeInterval   100;
+        timeStart       300;
+        operation       sum;
+        regionType      faceZone;
+        name            faceZone_a;
+        weightField     none;
+        writeFields     yes;
+        surfaceFormat   raw;
+
+    }
+
+    field_cylinder_b
+    {
+
+        type            surfaceFieldValue;
+        libs            (fieldFunctionObjects);
+        fields          (forceCoeff);
+        //writeControl    timeStep;
+        //writeControl    writeTime;
+        //executeControl  timeStep;
+        //executeInterval 2;
+        writeControl    timeStep;
+        writeInterval   100;
+        timeStart       300;
+        operation       sum;
+        regionType      faceZone;
+        name            faceZone_b;
+        weightField     none;
+        writeFields     yes;
+        surfaceFormat   raw;
+
+    }
+    field_cylinder_c
+    {
+
+        type            surfaceFieldValue;
+        libs            (fieldFunctionObjects);
+        fields          (forceCoeff);
+        //writeControl    timeStep;
+        //writeControl    writeTime;
+        //executeControl  timeStep;
+        //executeInterval 2;
+        writeControl    timeStep;
+        writeInterval   100;
+        timeStart       300;
+        operation       sum;
+        regionType      faceZone;
+        name            faceZone_c;
+        weightField     none;
+        writeFields     yes;
+        surfaceFormat   raw;
+
+    }
+
+    probes
+    {
+        type            probes;
+        libs            (sampling);
+
+        // Name of the directory for probe data
+        name            probes;
+
+        // Write at same frequency as fields
+        executeControl  timeStep;
+        executeInterval 100;
+        writeControl    timeStep;
+        writeInterval   100;
+        timeStart       300;
+
+        // Fields to be probed
+        fields          (p);
+
+        // Optional: do not recalculate cells if mesh moves
+        fixedLocations  true;
+
+        // Optional: interpolation scheme to use (default is cell)
+        interpolationScheme cell;
+
+        probeLocations
+        (
+		(1.97493 1.33926 0.005)
+		(8.38112 -1.26438 0.005)
+		(5.21386 -1.06882 0.005)
+		(5.62320 1.39910 0.005)
+		(8.72880 1.33974 0.005)
+		(2.75542 -1.38974 0.005)
+		(0.67351 -1.29452 0.005)
+        );
+
+        // Optional: filter out points that haven't been found. Default
+        //           is to include them (with value -VGREAT)
+        includeOutOfBounds  false;
+    }
+
+}
+
+// ************************************************************************* //

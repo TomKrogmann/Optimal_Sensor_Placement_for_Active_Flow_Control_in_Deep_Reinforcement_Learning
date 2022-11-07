@@ -1,0 +1,16 @@
+#!/bin/bash -l    
+#SBATCH --partition=standard
+#SBATCH --nodes=1
+#SBATCH --time=7-00:00:00
+#SBATCH --job-name=100_rf
+#SBATCH --ntasks-per-node=1
+
+module load python/3.8.2
+
+# adjust path if necessary
+source ~/drlfoam/pydrl/bin/activate
+source ~/drlfoam/setup-env --container
+
+# start a training with a buffer size of 8 and 8 runners;
+# save output to log.test_training
+python3 run_training_pinball_100_rf.py -o  test_train_rf_re100_5procs_actionmag5 -e slurm -b 10 -r 10 -i 9 &> log.test_training100_5procs_rf
